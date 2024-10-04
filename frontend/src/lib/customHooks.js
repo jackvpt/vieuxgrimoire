@@ -30,7 +30,7 @@ export function useBestRatedBooks() {
     }
     getRatedBooks();
   }, []);
-
+  console.log('{bestRatedBooks} :>> ', { bestRatedBooks });
   return { bestRatedBooks };
 }
 
