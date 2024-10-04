@@ -1,5 +1,5 @@
 // Import mongoose
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 // Create a mongoose Schema
 const bookSchema = mongoose.Schema({
@@ -16,8 +16,8 @@ const bookSchema = mongoose.Schema({
         }
     ],
     averageRating: { type: Number, required: false }
-});
+})
 
-// model methods converts Schema in usable model
-module.exports = mongoose.model("Book", bookSchema);
+// Model methods converts Schema in usable model
+module.exports = mongoose.model("Book", bookSchema)
 

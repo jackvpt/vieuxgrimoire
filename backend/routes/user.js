@@ -1,14 +1,13 @@
 // Import Express
-const express = require('express');
+const express = require("express")
 
-const router = express.Router();
+const router = express.Router()
 
 // Import controller
-const userCtrl = require('../controllers/user');
+const userCtrl = require("../controllers/user")
 
 // Routes
-router.post('/signup', userCtrl.signup);
-router.post('/login', userCtrl.login);
-// router.get('/users', userCtrl.getAllUsers);
+router.post("/signup", userCtrl.signup)
+router.post("/login", userCtrl.login)
 
-module.exports = router;
+module.exports = router
