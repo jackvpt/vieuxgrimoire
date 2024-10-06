@@ -1,5 +1,10 @@
+// Import file system
 const fs = require("fs");
+
+// Import path
 const path = require("path");
+
+// Import Sharp
 const sharp = require("sharp");
 
 const resizeImage = (req, res, next) => {
@@ -32,7 +37,6 @@ const resizeImage = (req, res, next) => {
                     return res.status(500).json({ error: "Initial image deletion error" })
                 }
             })
-
 
             req.file.filename = webpFilename;
             next() // Continue to next middleware

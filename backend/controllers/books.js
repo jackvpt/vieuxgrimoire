@@ -4,8 +4,6 @@ const Book = require("../models/Book")
 // Import file system from Node.js
 const fs = require("fs")
 
-
-
 // GET All Books
 exports.getAllBooks = (req, res, next) => {
   Book.find().then(
