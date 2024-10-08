@@ -1,60 +1,42 @@
-// import Book Model
+/** Import Book Model */
 const Book = require("../models/Book")
 
-// Import file system from Node.js
+/** Import file system from Node.js */
 const fs = require("fs")
 
-// GET All Books
-exports.getAllBooks = (req, res, next) => {
-  Book.find().then(
-    (books) => {
-      res.status(200).json(books)
-    }
-  ).catch(
-    (error) => {
-      res.status(400).json({
-        error: error
-      })
-    }
-  )
+/** GET All Books */
+exports.getAllBooks = async (req, res, next) => {
+  try {
+    const allBooks = await Book.find()
+    res.status(200).json(allBooks)
+  } catch (error) {
+    res.status(400).json({ error: error })
+  }
 }
 
-// GET One book
-exports.getOneBook = (req, res, next) => {
-  Book.findOne({
-    _id: req.params.id
-  }).then(
-    (book) => {
-      res.status(200).json(book);
-    }
-  ).catch(
-    (error) => {
-      res.status(404).json({
-        error: error
-      })
-    }
-  )
+/** GET One Book */
+exports.getOneBook = async (req, res, next) => {
+  try {
+    const book = await Book.findOne({ _id: req.params.id })
+    book ? res.status(200).json(book) : res.status(404).json({ error: 'Book not found' })
+  } catch (error) {
+    res.status(500).json({ error: error })
+
+  }
 }
 
-// GET Best Rating
+/** GET Best Rating */
 exports.bestRating = async (req, res, next) => {
   try {
     const bestRated = await Book.find().sort({ averageRating: -1 }).limit(3)
-
-    if (bestRated) {
-      res.status(200).json(bestRated)
-    } else {
-      res.status(500).json({
-        message: "Error when sorting books !"
-      })
-    }
+    bestRated ? res.status(200).json(bestRated) : res.status(500).json({ message: "Error when sorting books !" })
   }
   catch (error) {
-    alert(error)
+    res.status(500).json({ error: error })
   }
 };
 
-// POST New Book
+/** POST New Book */
 exports.createBook = async (req, res, next) => {
   const bookObject = JSON.parse(req.body.book) // Converts request (formData) to JSON
 
@@ -65,97 +47,96 @@ exports.createBook = async (req, res, next) => {
     ...bookObject,
     userId: req.auth.userId,
     imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}` // Create full URL
-  });
+  })
 
-  book.save()
-    .then(() => { res.status(201).json({ message: "New book added successfully" }) })
-    .catch(error => { res.status(400).json({ error }) })
+  try {
+    book.save()
+    res.status(201).json({ message: "New book added successfully !" })
+  } catch (error) {
+    res.status(400).json({ error: "Error adding book !" })
+  }
 };
 
-// PUT Modify Book
-exports.modifyBook = (req, res, next) => {
-  const bookObject = req.file ? { // Check 'file' field
-    ...JSON.parse(req.body.book),
-    imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}` // Create full URL if there is a file
-  } : { ...req.body }
+/** PUT Modify Book */
+exports.modifyBook = async (req, res, next) => {
+  try {
+    const bookObject = req.file ? { // Check 'file' field
+      ...JSON.parse(req.body.book),
+      imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}` // Create full URL if there is a file
+    } : { ...req.body }
 
-  delete bookObject._userId; // Delete front-end unreliable userID (replaced by authentification token bellow)
-  Book.findOne({ _id: req.params.id }) // Get Book based on ID
-    .then((book) => {
-      if (book.userId != req.auth.userId) { // Compares userID with authentification ID
-        res.status(401).json({ message: "Not authorized !" }) // User is not authorized to modify Book created by another user
-      } else {
-        fs.unlink(`images/${req.file.filename}`, (err) => {
-          if (err) {
-            console.error("Error deleting old image file :", err);
-          }
-        });
-        Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id }) // Update Book
-          .then(() => res.status(200).json({ message: "Book modified !" }))
-          .catch(error => res.status(401).json({ error }))
-      }
+    delete bookObject._userId; // Delete front-end unreliable userID (replaced by authentification token bellow)
 
-    })
-    .catch((error) => {
-      res.status(400).json({ error })
-    });
+    const book = await Book.findOne({ _id: req.params.id })
+
+    if (book.userId != req.auth.userId) { // Compares userID with authentification ID
+      return res.status(401).json({ message: "Not authorized !" }) // User is not authorized to modify Book created by another user
+    }
+
+    if (req.file) { /** Check if there is a file */
+      const filename = book.imageUrl.split('/images/')[1] /** Get filename */
+      fs.unlinkSync(`images/${filename}`) /** Delete file */
+    }
+
+    await Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id }) /** Update Book */
+    res.status(200).json({ message: "Book modified !" })
+
+  } catch (error) {
+    res.status(401).json({ error })
+  }
+
 };
 
-// DELETE One Book
-exports.deleteBook = (req, res, next) => {
-  Book.findOne({ _id: req.params.id }) // Get Book based on ID
-    .then(book => {
-      if (book.userId != req.auth.userId) { // Compares userID with authentification ID
-        res.status(401).json({ message: "Not authorized !" }); // User is not authorized to modify Book created by another user
-      } else {
-        const filename = book.imageUrl.split("/images/")[1]; // Get only filename
-        fs.unlink(`images/${filename}`, () => { // Delete file from folder 'images'
-          Book.deleteOne({ _id: req.params.id }) // Delete book (when image is unlinked with callback method)
-            .then(() => { res.status(200).json({ message: "Book deleted !" }) })
-            .catch(error => res.status(401).json({ error }))
-        });
-      }
-    })
-    .catch(error => {
-      res.status(500).json({ error })
-    });
+/** DELETE One Book */
+exports.deleteBook = async (req, res, next) => {
+  try {
+    const book = await Book.findOne({ _id: req.params.id }) /** Get Book based on ID */
+
+    if (book.userId != req.auth.userId) { /** Compares userID with authentification ID */
+      res.status(401).json({ message: "Not authorized !" }) // User is not authorized to modify Book created by another user
+    } else {
+      const filename = book.imageUrl.split("/images/")[1]; /** Get only filename */
+      fs.unlinkSync(`images/${filename}`) /** Delete file from folder 'images' */
+
+      await Book.deleteOne({ _id: req.params.id }) /** Delete book (when image is unlinked with callback method) */
+
+      res.status(200).json({ message: "Book deleted !" })
+    }
+  } catch (error) {
+    res.status(500).json({ error })
+  }
 };
 
+/** POST Rating */
+exports.createRating = async (req, res, next) => {
+  if (req.body.rating < 1 || req.body.rating > 5) { /** Check rating between 1 to 5 */
+    return res.status(403).json({ message: "Not authorized (rating must be between 1 and 5) !" })
+  }
 
+  const ratingObject = { ...req.body, grade: req.body.rating } /** Get rating */
+  delete ratingObject._id /** Delete front-end unreliable userID (replaced by authentification token bellow) */
 
-// POST Rating
-exports.createRating = (req, res, next) => {
+  try {
+    const book = await Book.findOne({ _id: req.params.id }) /** Get book */
 
-  if (req.body.rating < 1 || req.body.rating > 5) {// Check rating between 1 to 5
-    res.status(403).json({ message: "Not authorized !" })
-  } else {
+    const ratings = book.ratings /** Get all ratings */
+    const userIds = ratings.map(rating => rating.userId) /** Get all userId having given a rating */
 
-    const ratingObject = { ...req.body, grade: req.body.rating };
-    delete ratingObject._id       // Delete front-end unreliable userID (replaced by authentification token bellow)
+    if (userIds.includes(req.auth.userId)) { /**  Check if user has already given a rating for this book */
+      res.status(403).json({ message: "User has already given a rating about this book !" })
+    } else {
+      ratings.push(ratingObject) /** Add rating */
 
-    Book.findOne({ _id: req.params.id })
-      .then(book => {
-        const ratings = book.ratings // Get all ratings
-        const userIds = ratings.map(rating => rating.userId)
+      const grades = ratings.map(rating => rating.grade) /** Get all grades */
+      const averageGrades = grades.reduce((a, b) => a + b) / grades.length  /** Calculate average grade */
+      book.averageRating = averageGrades.toFixed(1) /** Set average rating */
 
-        if (userIds.includes(req.auth.userId)) {         // Check if user has already given a rating for this book
-          res.status(403).json({ message: "User has already given a rating about this book !" })
-        } else {
+      /** Update book with new rating and average grade */
+      await Book.updateOne({ _id: req.params.id }, { ratings: ratings, averageRating: averageRating, _id: req.params.id })
+      res.status(201).json({message: "New rating added"})
+    }
 
-          ratings.push(ratingObject) // Add rating
-          const grades = ratings.map(rating => rating.grade) // Get all grades
-          const averageGrades = grades.reduce((a, b) => a + b) / grades.length  // Calculate average grade
-          book.averageRating = averageGrades.toFixed(1) // Set average rating
-
-          // Update book with new rating and average grade
-          Book.updateOne({ _id: req.params.id }, { ratings: ratings, averageRating: averageGrades, _id: req.params.id })
-            .then(() => { res.status(201).json() })
-            .catch(error => { res.status(400).json({ error }) })
-          res.status(200).json(book)
-        }
-      })
-      .catch((error) => {
-        res.status(404).json({ error })
-      })
+  } catch (error) {
+    res.status(404).json({ error: error })
   }
 }

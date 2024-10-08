@@ -1,3 +1,4 @@
+/** Import express-validator */
 const {body, validationResult} = require('express-validator')
  
 module.exports = [

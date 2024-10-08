@@ -1,7 +1,7 @@
-// Import Node http package
+/** Import Node http package */
 const http = require("http")
 
-// Import app.js
+/** Import app.js */
 const app = require("./app")
 
 const normalizePort = val => {
@@ -16,11 +16,11 @@ const normalizePort = val => {
   return false
 };
 
-// Return valid port
+/** Return valid port */ 
 const port = normalizePort(process.env.PORT || "4000")
 app.set("port", port)
 
-// Manage errors
+/** Manage errors */ 
 const errorHandler = error => {
   if (error.syscall !== "listen") {
     throw error
@@ -41,7 +41,7 @@ const errorHandler = error => {
   }
 };
 
-// app.js is called at each server call
+/** app.js is called at each server call */
 const server = http.createServer(app)
 
 server.on("error", errorHandler)

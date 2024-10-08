@@ -1,5 +1,5 @@
 /** Imports */
-require("dotenv").config() // Load environnement variables from .env file to process.env
+require("dotenv").config() /** Load environnement variables from .env file to process.env */ 
 const helmet = require("helmet") 
 const express = require("express")
 const mongoose = require("mongoose")
