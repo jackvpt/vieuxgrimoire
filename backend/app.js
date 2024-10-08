@@ -1,27 +1,18 @@
-// Import express
+/** Inports */
+require("dotenv").config() // Load environnement variables from .env file to process.env
+const helmet = require("helmet") 
 const express = require("express")
-const bodyParser = require("body-parser")
-
-// Import mongoose
 const mongoose = require("mongoose")
-
-// Import path
 const path = require("path")
-
-// Import Books Routes
 const booksRoutes = require("./routes/books")
-
-// Import User Routes
 const userRoutes = require("./routes/user")
 
-// Import models
-const Book = require("./models/Book")
 
 // Create an express application
 const app = express()
 
 // MongoDB database connection
-mongoose.connect("mongodb+srv://jackvpt:Koala241080@cluster0.go29j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+mongoose.connect(process.env.DB_LINK,
   {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -31,6 +22,9 @@ mongoose.connect("mongodb+srv://jackvpt:Koala241080@cluster0.go29j.mongodb.net/?
 
 // Middleware which intercepts all queries with JSON type and builds req.body (replaces body-parser)
 app.use(express.json())
+
+app.use(helmet()) /** Protect application by setting various HTTP headers (XSS, Clickjacking,...) */
+
 
 // Middleware for CORS headers 
 app.use((req, res, next) => {

@@ -85,10 +85,16 @@ exports.modifyBook = (req, res, next) => {
       if (book.userId != req.auth.userId) { // Compares userID with authentification ID
         res.status(401).json({ message: "Not authorized !" }) // User is not authorized to modify Book created by another user
       } else {
+        fs.unlink(`images/${req.file.filename}`, (err) => {
+          if (err) {
+            console.error("Error deleting old image file :", err);
+          }
+        });
         Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id }) // Update Book
           .then(() => res.status(200).json({ message: "Book modified !" }))
           .catch(error => res.status(401).json({ error }))
       }
+
     })
     .catch((error) => {
       res.status(400).json({ error })
@@ -121,34 +127,35 @@ exports.deleteBook = (req, res, next) => {
 exports.createRating = (req, res, next) => {
 
   if (req.body.rating < 1 || req.body.rating > 5) {// Check rating between 1 to 5
-    return
+    res.status(403).json({ message: "Not authorized !" })
+  } else {
+
+    const ratingObject = { ...req.body, grade: req.body.rating };
+    delete ratingObject._id       // Delete front-end unreliable userID (replaced by authentification token bellow)
+
+    Book.findOne({ _id: req.params.id })
+      .then(book => {
+        const ratings = book.ratings // Get all ratings
+        const userIds = ratings.map(rating => rating.userId)
+
+        if (userIds.includes(req.auth.userId)) {         // Check if user has already given a rating for this book
+          res.status(403).json({ message: "User has already given a rating about this book !" })
+        } else {
+
+          ratings.push(ratingObject) // Add rating
+          const grades = ratings.map(rating => rating.grade) // Get all grades
+          const averageGrades = grades.reduce((a, b) => a + b) / grades.length  // Calculate average grade
+          book.averageRating = averageGrades.toFixed(1) // Set average rating
+
+          // Update book with new rating and average grade
+          Book.updateOne({ _id: req.params.id }, { ratings: ratings, averageRating: averageGrades, _id: req.params.id })
+            .then(() => { res.status(201).json() })
+            .catch(error => { res.status(400).json({ error }) })
+          res.status(200).json(book)
+        }
+      })
+      .catch((error) => {
+        res.status(404).json({ error })
+      })
   }
-
-  const ratingObject = { ...req.body, grade: req.body.rating };
-  delete ratingObject._id       // Delete front-end unreliable userID (replaced by authentification token bellow)
-
-  Book.findOne({ _id: req.params.id })
-    .then(book => {
-      const ratings = book.ratings // Get all ratings
-      const userIds = ratings.map(rating => rating.userId)
-
-      if (userIds.includes(req.auth.userId)) {         // Check if user has already given a rating for this book
-        res.status(403).json({ message: "Not authorized !" })
-      } else {
-
-        ratings.push(ratingObject) // Add rating
-        const grades = ratings.map(rating => rating.grade) // Get all grades
-        const averageGrades = grades.reduce((a, b) => a + b) / grades.length  // Calculate average grade
-        book.averageRating = averageGrades // Set average rating
-
-        // Update book with new rating and average grade
-        Book.updateOne({ _id: req.params.id }, { ratings: ratings, averageRating: averageGrades, _id: req.params.id })
-          .then(() => { res.status(201).json() })
-          .catch(error => { res.status(400).json({ error }) })
-        res.status(200).json(book)
-      }
-    })
-    .catch((error) => {
-      res.status(404).json({ error })
-    })
 }

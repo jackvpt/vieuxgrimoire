@@ -13,15 +13,29 @@ const MIME_TYPES = {
   "image/png": "png"
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, callback) => { // Set folder
-    callback(null, "images")
-  },
-  filename: (req, file, callback) => { // Set filename
-    const name = file.originalname.split(' ').join('_') // Replaces ' ' by '_' to avoid server issues
-    const extension = MIME_TYPES[file.mimetype] // Convert file MIME TYPE to extension
-    callback(null, name + Date.now() + "." + extension) // Add Timestamp to make file unique
+const fileFilter = (req, file, callback) => {
+  if (MIME_TYPES[file.mimetype]) {
+    callback(null, true)
+  } else {
+    callback(new Error('File type not allowed !'))
   }
-})
+};
 
-module.exports = multer({ storage: storage }).single("image") // 'Single' for unique file - 'image' for image type
+// const storage = multer.diskStorage({
+//   destination: (req, file, callback) => { // Set folder
+//     callback(null, "images")
+//   },
+//   filename: (req, file, callback) => { // Set filename
+//     const name = file.originalname.split(' ').join('_').replace(/\.[^.]+$/, "") // Replaces ' ' by '_' to avoid server issues and removes extension
+//     const extension = MIME_TYPES[file.mimetype] // Convert file MIME TYPE to extension
+//     callback(null, name + Date.now() + "." + extension) // Add Timestamp to make file unique
+//   }
+// })
+
+const storage = multer.memoryStorage()
+
+module.exports = multer({
+  storage: storage,
+  limits: { files: 1, filesize: 4 * 1024 * 1024 }, // Limit number of file to 1 and limit file size to 4Mo
+  fileFilter: fileFilter
+}).single("image") // 'Single' for unique file - 'image' for image type

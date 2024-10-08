@@ -1,10 +1,17 @@
-// Import JSONWebToken
+/**
+ * Load environnement variables from .env file to process.env
+ */
+require("dotenv").config() 
+
+/**
+ * Import JSONWebToken
+ */
 const jwt = require("jsonwebtoken")
  
 module.exports = (req, res, next) => {
    try {
        const token = req.headers.authorization.split(' ')[1] // Token is composed of "Bearer " + 'token'
-       const decodedToken = jwt.verify(token, "RANDOM_TOKEN_SECRET") // Decodes token with secret key (same as in controller/user.js)
+       const decodedToken = jwt.verify(token, process.env.SECRET_TOKEN) // Decodes token with secret key (same as in controller/user.js)
        const userId = decodedToken.userId // Get userID
        req.auth = {
            userId: userId

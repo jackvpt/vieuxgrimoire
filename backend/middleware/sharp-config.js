@@ -12,35 +12,19 @@ const resizeImage = (req, res, next) => {
         return next()
     }
 
-    const filePath = req.file.path
+    const fileName = path.parse(req.file.originalname).name;
+    const newFilename = `${fileName}_${Date.now()}.webp`;
+    req.file.filename = newFilename;
 
-    // Check file path
-    if (typeof filePath !== "string" || !filePath) {
-        return res.status(400).json({ error: "Wrong or missing file path" })
-    }
-
-    const webpFilename = req.file.filename.replace(/\.[^.]+$/, ".webp")
-    const webpImagePath = path.join("images", webpFilename)
-
-    sharp(filePath)
+    sharp(req.file.buffer)
         .resize(206)
         .webp({ quality: 20 })
-        .toFile(webpImagePath, (err, info) => {
-            if (err) {
-                return res.status(500).json({ error: "Resize image error" })
-            }
-
-            // Delete initial image
-            sharp.cache(false) // To avoid unlink error (permissions)
-            fs.unlink(req.file.path, (unlinkErr) => {
-                if (unlinkErr) {
-                    return res.status(500).json({ error: "Initial image deletion error" })
-                }
-            })
-
-            req.file.filename = webpFilename;
-            next() // Continue to next middleware
-        });
-};
+        .toFile(`images/${newFilename}`)
+        .then(() => next())
+        .catch((error) => {
+            console.error(error);
+            return res.status(500).json({ message: "Error resizing image !" });
+        })
+}
 
 module.exports = resizeImage;
