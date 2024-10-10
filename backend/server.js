@@ -1,7 +1,5 @@
-/** Import Node http package */
+/** Imports */
 const http = require("http")
-
-/** Import app.js */
 const app = require("./app")
 
 const normalizePort = val => {
