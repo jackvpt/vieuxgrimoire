@@ -20,6 +20,6 @@ const storage = multer.memoryStorage() /** Store file in RAM */
 
 module.exports = multer({
   storage: storage,
-  limits: { files: 1, filesize: 4 * 1024 * 1024 }, /** Limit number of file to 1 and limit file size to 4Mo */ 
+  limits: { files: 1, fileSize: 4 * 1024 * 1024 }, /** Limit number of file to 1 and limit file size to 4Mo */ 
   fileFilter: fileFilter
 }).single("image") /** 'Single' for unique file - 'image' for image type */ 

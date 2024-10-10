@@ -23,7 +23,7 @@ exports.signup = async (req, res, next) => {
     if (!isValidPassword(req.body.password)) { /** Check password validity */
         return res
             .status(400)
-            .json({ error: "Password is not valid (8 characters minimum with 1 uppercase, 1 lowercase, 1 number and 1 special character among !@#$%^&*()_+{}) !" });
+            .json({ error: "Password is not valid !" });
     }
 
     try {
