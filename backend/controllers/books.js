@@ -3,7 +3,7 @@ const Book = require("../models/Book")
 const fs = require("fs")
 
 /** GET All Books */
-exports.getAllBooks = async (req, res, next) => {
+exports.getAllBooks = async (req, res) => {
   try {
     const allBooks = await Book.find()
     res.status(200).json(allBooks)
@@ -13,12 +13,10 @@ exports.getAllBooks = async (req, res, next) => {
 }
 
 /** GET One Book */
-exports.getOneBook = async (req, res, next) => {
+exports.getOneBook = async (req, res) => {
   try {
     const book = await Book.findOne({ _id: req.params.id })
-    book
-      ? res.status(200).json(book)
-      : res.status(404).json({ error: "Book not found" })
+    book ? res.status(200).json(book) : res.status(404).json({ error: "Book not found" })
   } catch (error) {
     res.status(500).json({ error: error })
   }
@@ -28,9 +26,7 @@ exports.getOneBook = async (req, res, next) => {
 exports.bestRating = async (req, res) => {
   try {
     const bestRated = await Book.find().sort({ averageRating: -1 }).limit(3)
-    bestRated
-      ? res.status(200).json(bestRated)
-      : res.status(500).json({ message: "Error when sorting books !" })
+    bestRated ? res.status(200).json(bestRated) : res.status(500).json({ message: "Error when sorting books !" })
   } catch (error) {
     res.status(500).json({ error: error })
   }
@@ -47,8 +43,7 @@ exports.createBook = async (req, res) => {
     const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
-      imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename
-        }` /** Create full URL */,
+      imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}` /** Create full URL */
     })
 
     book.save()
@@ -65,8 +60,7 @@ exports.modifyBook = async (req, res) => {
     const bookObject = req.file
       ? {
         ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename
-          }` /** Create full URL if there is a file */,
+        imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}` /** Create full URL if there is a file */
       }
       : { ...req.body }
 
@@ -74,11 +68,9 @@ exports.modifyBook = async (req, res) => {
 
     const book = await Book.findOne({ _id: req.params.id })
 
+    /** Compares userID with authentification ID */
     if (book.userId != req.auth.userId) {
-      /** Compares userID with authentification ID */
-      return res.status(401).json({
-        message: "Not authorized !",
-      }) /** User is not authorized to modify Book created by another user */
+      return res.status(401).json({ message: "Not authorized !" }) /** User is not authorized to modify Book created by another user */
     }
 
     if (req.file) {
@@ -87,10 +79,11 @@ exports.modifyBook = async (req, res) => {
       fs.unlinkSync(`images/${filename}`) /** Delete file */
     }
 
+    /** Update Book */
     await Book.updateOne(
       { _id: req.params.id },
       { ...bookObject, _id: req.params.id }
-    ) /** Update Book */
+    )
     res.status(200).json({ message: "Book modified !" })
   } catch (error) {
     res.status(401).json({ error })
@@ -98,28 +91,19 @@ exports.modifyBook = async (req, res) => {
 }
 
 /** DELETE One Book */
-exports.deleteBook = async (req, res, next) => {
+exports.deleteBook = async (req, res) => {
   try {
     /** Get Book based on ID */
-    const book = await Book.findOne({
-      _id: req.params.id,
-    })
+    const book = await Book.findOne({ _id: req.params.id })
 
     /** Compares userID with authentification ID */
     if (book.userId != req.auth.userId) {
-      res.status(401).json({
-        message: "Not authorized !",
-      }) /** User is not authorized to modify Book created by another user */
+      res.status(401).json({ message: "Not authorized !" }) /** User is not authorized to modify Book created by another user */
     } else {
-      const filename =
-        book.imageUrl.split("/images/")[1] /** Get only filename */
-      fs.unlinkSync(
-        `images/${filename}`
-      ) /** Delete file from folder 'images' */
+      const filename = book.imageUrl.split("/images/")[1] /** Get only filename */
+      fs.unlinkSync(`images/${filename}`) /** Delete file from folder 'images' */
 
-      await Book.deleteOne({
-        _id: req.params.id,
-      }) /** Delete book (when image is unlinked with callback method) */
+      await Book.deleteOne({ _id: req.params.id }) /** Delete book (when image is unlinked with callback method) */
 
       res.status(200).json({ message: "Book deleted !" })
     }
@@ -129,21 +113,16 @@ exports.deleteBook = async (req, res, next) => {
 }
 
 /** POST Rating */
-exports.createRating = async (req, res, next) => {
+exports.createRating = async (req, res) => {
 
   if (req.body.rating < 1 || req.body.rating > 5) {
     /** Check rating between 1 to 5 */
-    return res.status(403).json({
-      message: "Not authorized (rating must be between 1 and 5) !",
-    })
+    return res.status(403).json({ message: "Not authorized (rating must be between 1 and 5) !" })
   }
 
   try {
 
-    const ratingObject = {
-      userId: req.auth.userId,
-      grade: req.body.rating,
-    }
+    const ratingObject = { userId: req.auth.userId, grade: req.body.rating, }
     delete ratingObject._id /** Delete front-end unreliable userID (replaced by authentification token bellow) */
 
     /** Get book */
@@ -154,17 +133,13 @@ exports.createRating = async (req, res, next) => {
 
     /**  Check if user has already given a rating for this book */
     if (userIds.includes(req.auth.userId)) {
-      return res.status(403).json({
-        message: "User has already given a rating about this book !",
-      })
+      return res.status(403).json({ message: "User has already given a rating about this book !" })
     }
 
     /** Add the new rating */
     book.ratings.push(ratingObject)
     const grades = book.ratings.map((rating) => rating.grade) /** Get all grades */
-    const averageGrades =
-      grades.reduce((a, b) => a + b) /
-      grades.length /** Calculate average grade */
+    const averageGrades = grades.reduce((a, b) => a + b) / grades.length /** Calculate average grade */
     book.averageRating = averageGrades.toFixed(0) /** Set average rating */
 
     const updatedBook = await book.save()

@@ -23,26 +23,20 @@ const isValidPassword = (password) => {
 
 /** Create new User */
 exports.signup = async (req, res, next) => {
+  /** Check password validity */
   if (!isValidPassword(req.body.password)) {
-    /** Check password validity */
     return res
       .status(400)
-      .json({
-        error:
-          "Password is not valid (8 caracters mini, 1 uppercase, 1 lowercase, 1 number, 1 special car!",
-      })
+      .json({ error: "Password is not valid (8 caracters mini, 1 uppercase, 1 lowercase, 1 number, 1 special car !" })
   }
 
   try {
-    const hash = await bcrypt.hash(
-      req.body.password,
-      10
-    ) /** Hash password with bcrypt (10 for number of algorithm loops) */
-    const user = new User({
-      /** Create User with hashed password */ email: req.body.email,
-      password: hash,
-    })
-    await user.save() /** Save new User */
+    /** Hash password with bcrypt (10 for number of algorithm loops) */
+    const hash = await bcrypt.hash(req.body.password, 10)
+    /** Create User with hashed password */
+    const user = new User({ email: req.body.email, password: hash, })
+    /** Save new User */
+    await user.save()
     res.status(201).json({ message: "New user created" })
   } catch (error) {
     res.status(500).json({ error })
@@ -52,9 +46,8 @@ exports.signup = async (req, res, next) => {
 /** Log-in User */
 exports.login = async (req, res, next) => {
   try {
-    const user = await User.findOne({
-      /**  Search User */ email: req.body.email,
-    })
+    /**  Search User */
+    const user = await User.findOne({ email: req.body.email })
 
     if (!user) {
       return res.status(401).json({ message: "UserID/Password incorrect" })

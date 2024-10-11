@@ -12,7 +12,7 @@ const normalizePort = val => {
     return port
   }
   return false
-};
+}
 
 /** Return valid port */
 const port = normalizePort(process.env.PORT || "4000")
@@ -29,7 +29,7 @@ const errorHandler = error => {
     case "EACCES":
       console.error(bind + " requires elevated privileges.")
       process.exit(1)
-      break;
+      break
     case "EADDRINUSE":
       console.error(bind + " is already in use.")
       process.exit(1)
@@ -37,7 +37,7 @@ const errorHandler = error => {
     default:
       throw error
   }
-};
+}
 
 /** app.js is called at each server call */
 const server = http.createServer(app)
@@ -47,6 +47,6 @@ server.on("listening", () => {
   const address = server.address()
   const bind = typeof address === "string" ? "pipe " + address : "port " + port
   console.log("Listening on " + bind)
-});
+})
 
 server.listen(port)
