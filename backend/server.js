@@ -14,11 +14,11 @@ const normalizePort = val => {
   return false
 };
 
-/** Return valid port */ 
-const port = normalizePort(process.env.PORT || "4000")
+/** Return valid port */
+const port = normalizePort(process.env.PORT || "4000")
 app.set("port", port)
 
-/** Manage errors */ 
+/** Manage errors */
 const errorHandler = error => {
   if (error.syscall !== "listen") {
     throw error

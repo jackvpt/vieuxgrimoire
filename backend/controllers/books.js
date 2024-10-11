@@ -47,9 +47,8 @@ exports.createBook = async (req, res) => {
     const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
-      imageUrl: `${req.protocol}://${req.get("host")}/images/${
-        req.file.filename
-      }` /** Create full URL */,
+      imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename
+        }` /** Create full URL */,
     })
 
     book.save()
@@ -65,11 +64,10 @@ exports.modifyBook = async (req, res) => {
     /** Check 'file' field */
     const bookObject = req.file
       ? {
-          ...JSON.parse(req.body.book),
-          imageUrl: `${req.protocol}://${req.get("host")}/images/${
-            req.file.filename
+        ...JSON.parse(req.body.book),
+        imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename
           }` /** Create full URL if there is a file */,
-        }
+      }
       : { ...req.body }
 
     delete bookObject._userId /** Delete front-end unreliable userID (replaced by authentification token bellow) */
@@ -132,6 +130,7 @@ exports.deleteBook = async (req, res, next) => {
 
 /** POST Rating */
 exports.createRating = async (req, res, next) => {
+
   if (req.body.rating < 1 || req.body.rating > 5) {
     /** Check rating between 1 to 5 */
     return res.status(403).json({
@@ -140,17 +139,18 @@ exports.createRating = async (req, res, next) => {
   }
 
   try {
+
     const ratingObject = {
-      ...req.body,
+      userId: req.auth.userId,
       grade: req.body.rating,
-    } /** Get rating */
+    }
     delete ratingObject._id /** Delete front-end unreliable userID (replaced by authentification token bellow) */
 
     /** Get book */
     const book = await Book.findOne({ _id: req.params.id })
 
     /** Get all userId having given a rating */
-    const userIds = ratings.map((rating) => rating.userId)
+    const userIds = book.ratings.map((rating) => rating.userId)
 
     /**  Check if user has already given a rating for this book */
     if (userIds.includes(req.auth.userId)) {
@@ -159,27 +159,17 @@ exports.createRating = async (req, res, next) => {
       })
     }
 
-    const grades = ratings.map((rating) => rating.grade) /** Get all grades */
+    /** Add the new rating */
+    book.ratings.push(ratingObject)
+    const grades = book.ratings.map((rating) => rating.grade) /** Get all grades */
     const averageGrades =
       grades.reduce((a, b) => a + b) /
       grades.length /** Calculate average grade */
-    const averageRating = averageGrades.toFixed(0) /** Set average rating */
-    book.averageRating = averageRating
-    book.ratings.push(ratingObject)
+    book.averageRating = averageGrades.toFixed(0) /** Set average rating */
 
-    await book.save()
+    const updatedBook = await book.save()
 
-    /** Update book with new rating and average grade */
-    // const updatedBook = await Book.updateOne(
-    //   { _id: req.params.id },
-    //   {
-    //     ratings: ratings,
-    //     averageRating: averageRating,
-    //     _id: req.params.id,
-    //   }
-    // )
-
-    res.status(201).json(book)
+    res.status(201).json(updatedBook)
   } catch (error) {
     res.status(404).json({ error: error })
   }
