@@ -80,10 +80,7 @@ exports.modifyBook = async (req, res) => {
     }
 
     /** Update Book */
-    await Book.updateOne(
-      { _id: req.params.id },
-      { ...bookObject, _id: req.params.id }
-    )
+    await Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id })
     res.status(200).json({ message: "Book modified !" })
   } catch (error) {
     res.status(401).json({ error })
@@ -121,7 +118,6 @@ exports.createRating = async (req, res) => {
   }
 
   try {
-
     const ratingObject = { userId: req.auth.userId, grade: req.body.rating, }
     delete ratingObject._id /** Delete front-end unreliable userID (replaced by authentification token bellow) */
 
